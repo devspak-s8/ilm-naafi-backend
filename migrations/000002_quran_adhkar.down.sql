@@ -1,0 +1,13 @@
+DROP TABLE IF EXISTS adhkar_reminders;
+DROP TABLE IF EXISTS adhkar_completion;
+DROP TABLE IF EXISTS duas;
+DROP TABLE IF EXISTS adhkar_sources;
+DROP TABLE IF EXISTS adhkar;
+DROP TABLE IF EXISTS dhikr_categories;
+DROP TABLE IF EXISTS quran_reading_history;
+DROP TABLE IF EXISTS quran_reading_progress;
+DROP TABLE IF EXISTS quran_bookmarks;
+DROP TABLE IF EXISTS quran_audio;
+DROP TABLE IF EXISTS quran_reciters;
+DROP TABLE IF EXISTS quran_ayahs;
+DROP TABLE IF EXISTS quran_surahs;
