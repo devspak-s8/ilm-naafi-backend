@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"net/http"
 	"strings"
 
 	apperr "github.com/ilmnafi/backend/internal/errors"

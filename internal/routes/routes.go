@@ -3,19 +3,20 @@ package routes
 import (
 	"net/http"
 
+	"github.com/gorilla/mux"
 	adhkarHandler "github.com/ilmnafi/backend/internal/adhkar/handler"
 	authHandler "github.com/ilmnafi/backend/internal/auth/handler"
 	"github.com/ilmnafi/backend/internal/health"
 	"github.com/ilmnafi/backend/internal/middleware"
 	quranHandler "github.com/ilmnafi/backend/internal/quran/handler"
 	userHandler "github.com/ilmnafi/backend/internal/user/handler"
-	"github.com/gorilla/mux"
 )
 
 func SetupRoutes(
 	authHdl *authHandler.AuthHandler,
 	userHdl *userHandler.UserHandler,
 	quranHdl *quranHandler.QuranHandler,
+	quranContentHdl *quranHandler.ContentHandler,
 	adhkarHdl *adhkarHandler.AdhkarHandler,
 	authMiddleware func(http.Handler) http.Handler,
 	rateLimiter *middleware.RateLimiter,
@@ -72,6 +73,16 @@ func SetupRoutes(
 	quranProtected.HandleFunc("/progress", quranHdl.GetProgress).Methods("GET")
 	quranProtected.HandleFunc("/progress", quranHdl.UpdateProgress).Methods("PUT")
 	quranProtected.HandleFunc("/continue", quranHdl.ContinueReading).Methods("GET")
+
+	quranV1 := r.PathPrefix("/api/v1/quran").Subrouter()
+	quranV1.HandleFunc("/chapters", quranContentHdl.ListChapters).Methods("GET")
+	quranV1.HandleFunc("/chapters/{chapter:[0-9]+}", quranContentHdl.GetChapter).Methods("GET")
+	quranV1.HandleFunc("/chapters/{chapter:[0-9]+}/verses", quranContentHdl.GetChapterVerses).Methods("GET")
+	quranV1.HandleFunc("/verses/{verseKey}", quranContentHdl.GetVerse).Methods("GET")
+	quranV1.HandleFunc("/juz/{juz:[0-9]+}", quranContentHdl.GetJuz).Methods("GET")
+	quranV1.HandleFunc("/pages/{page:[0-9]+}", quranContentHdl.GetPage).Methods("GET")
+	quranV1.HandleFunc("/search", quranContentHdl.Search).Methods("GET")
+	quranV1.HandleFunc("/resources/{resource:translations|tafsirs|recitations}", quranContentHdl.ListResources).Methods("GET")
 
 	adhkar := r.PathPrefix("/adhkar").Subrouter()
 	adhkar.HandleFunc("/categories", adhkarHdl.GetCategories).Methods("GET")

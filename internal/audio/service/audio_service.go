@@ -2,10 +2,9 @@ package service
 
 import (
 	"context"
-	"net/http"
 
-	apperr "github.com/ilmnafi/backend/internal/errors"
 	"github.com/ilmnafi/backend/internal/audio/model"
+	apperr "github.com/ilmnafi/backend/internal/errors"
 )
 
 type AudioService interface {

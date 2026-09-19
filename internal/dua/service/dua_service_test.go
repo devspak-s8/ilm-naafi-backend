@@ -1,4 +1,4 @@
-package dua_test
+package service_test
 
 import (
 	"context"
@@ -16,18 +16,32 @@ type fakeDuaRepo struct {
 	duas       []model.Dua
 }
 
-func (f *fakeDuaRepo) GetCategories(ctx context.Context) ([]model.DhikrCategory, error) { return f.categories, nil }
+func (f *fakeDuaRepo) GetCategories(ctx context.Context) ([]model.DhikrCategory, error) {
+	return f.categories, nil
+}
 func (f *fakeDuaRepo) GetDuas(ctx context.Context, categoryID int) ([]model.Dua, error) {
 	var out []model.Dua
-	for _, d := range f.duas { if d.CategoryID == categoryID { out = append(out, d) } }
+	for _, d := range f.duas {
+		if d.CategoryID == categoryID {
+			out = append(out, d)
+		}
+	}
 	return out, nil
 }
 func (f *fakeDuaRepo) GetDuaByID(ctx context.Context, id int) (*model.Dua, error) {
-	for _, d := range f.duas { if d.ID == id { return &d, nil } }
+	for _, d := range f.duas {
+		if d.ID == id {
+			return &d, nil
+		}
+	}
 	return nil, nil
 }
-func (f *fakeDuaRepo) GetDuasBySlug(ctx context.Context, slug string) ([]model.Dua, error) { return nil, nil }
-func (f *fakeDuaRepo) GetSources(ctx context.Context, sourceIDs []int) ([]model.DuaSource, error) { return nil, nil }
+func (f *fakeDuaRepo) GetDuasBySlug(ctx context.Context, slug string) ([]model.Dua, error) {
+	return nil, nil
+}
+func (f *fakeDuaRepo) GetSources(ctx context.Context, sourceIDs []int) ([]model.DuaSource, error) {
+	return nil, nil
+}
 
 func TestGetDua(t *testing.T) {
 	repo := &fakeDuaRepo{

@@ -93,6 +93,13 @@ migrations/                    # SQL migration files
 | `REFRESH_TOKEN_EXPIRATION` | No | Refresh token TTL (default: 168h) |
 | `RATE_LIMIT_REQUESTS` | No | Rate limit requests per window (default: 100) |
 | `RATE_LIMIT_WINDOW` | No | Rate limit window (default: 1m) |
+| `QURAN_PROVIDER` | No | Quran content provider (default: `quran_foundation`) |
+| `QURAN_FOUNDATION_ENV` | No | `prelive` for development or `production` for approved production access |
+| `QURAN_FOUNDATION_CLIENT_ID` | No | Server-side Quran Foundation client ID |
+| `QURAN_FOUNDATION_CLIENT_SECRET` | No | Server-side Quran Foundation client secret |
+| `QURAN_FOUNDATION_API_BASE_URL` | No | Optional API URL override, primarily for tests |
+| `QURAN_FOUNDATION_OAUTH_BASE_URL` | No | Optional OAuth URL override, primarily for tests |
+| `QURAN_PROVIDER_TIMEOUT` | No | Provider HTTP timeout (default: 15s) |
 
 ## API Endpoints
 
@@ -127,6 +134,27 @@ migrations/                    # SQL migration files
 |--------|----------|-------------|
 | GET | `/health` | Health check |
 | GET | `/ready` | Readiness check |
+
+### Quran Foundation content API
+
+The backend exposes a provider-neutral Quran contract under `/api/v1/quran`. It keeps Quran Foundation credentials server-side and requests content through the `QuranProvider` abstraction. Configure a Backend/server application in the Quran Foundation Developer Console before using the provider. Pre-live content is limited by Quran Foundation to a small test dataset; production access is required for the complete Quran.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/quran/chapters` | List chapters; accepts `language` |
+| GET | `/api/v1/quran/chapters/{chapter}` | Get normalized chapter metadata |
+| GET | `/api/v1/quran/chapters/{chapter}/verses` | Get chapter verses with optional words, translations, tafsir, audio, and pagination |
+| GET | `/api/v1/quran/verses/{verseKey}` | Get one verse, for example `1:1` |
+| GET | `/api/v1/quran/juz/{juz}` | Get Juz metadata and verse boundaries |
+| GET | `/api/v1/quran/pages/{page}` | Get verses for a Mushaf page |
+| GET | `/api/v1/quran/search?q=` | Search Quran content through the documented search API |
+| GET | `/api/v1/quran/resources/translations` | List translation resources |
+| GET | `/api/v1/quran/resources/tafsirs` | List tafsir resources |
+| GET | `/api/v1/quran/resources/recitations` | List recitation resources |
+
+Quran text is returned from the provider without LLM generation or rewriting. Responses retain provider identifiers and provenance fields. Related Hadith references, audio endpoints, local content synchronization, and user Quran preferences are planned follow-up slices.
+
+The provider uses OAuth2 client credentials on the backend, caches access tokens until shortly before expiry, retries a safe GET once for a 401 token refresh, and applies bounded retry behavior for 429/5xx responses. The frontend must call Ilm Nafi rather than Quran Foundation directly.
 
 ## Request/Response Examples
 

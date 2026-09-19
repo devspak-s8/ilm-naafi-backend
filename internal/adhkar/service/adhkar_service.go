@@ -2,12 +2,11 @@ package service
 
 import (
 	"context"
-	"net/http"
 	"time"
 
-	apperr "github.com/ilmnafi/backend/internal/errors"
 	"github.com/ilmnafi/backend/internal/adhkar/model"
 	"github.com/ilmnafi/backend/internal/adhkar/repository"
+	apperr "github.com/ilmnafi/backend/internal/errors"
 )
 
 type AdhkarService interface {

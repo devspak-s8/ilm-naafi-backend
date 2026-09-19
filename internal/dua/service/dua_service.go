@@ -2,11 +2,10 @@ package service
 
 import (
 	"context"
-	"net/http"
 
-	apperr "github.com/ilmnafi/backend/internal/errors"
 	"github.com/ilmnafi/backend/internal/dua/model"
 	"github.com/ilmnafi/backend/internal/dua/repository"
+	apperr "github.com/ilmnafi/backend/internal/errors"
 )
 
 type DuaService interface {

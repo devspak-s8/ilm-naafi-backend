@@ -14,6 +14,7 @@ import (
 	adhkarService "github.com/ilmnafi/backend/internal/adhkar/service"
 	authHandler "github.com/ilmnafi/backend/internal/auth/handler"
 	authRepo "github.com/ilmnafi/backend/internal/auth/repository"
+	sessionRepo "github.com/ilmnafi/backend/internal/auth/repository"
 	authService "github.com/ilmnafi/backend/internal/auth/service"
 	"github.com/ilmnafi/backend/internal/config"
 	"github.com/ilmnafi/backend/internal/database"
@@ -21,11 +22,11 @@ import (
 	"github.com/ilmnafi/backend/internal/health"
 	"github.com/ilmnafi/backend/internal/middleware"
 	quranHandler "github.com/ilmnafi/backend/internal/quran/handler"
+	quranProvider "github.com/ilmnafi/backend/internal/quran/provider"
 	quranRepo "github.com/ilmnafi/backend/internal/quran/repository"
-	quranService "github.com/ilmnafi/backend/internal/quran/service"
+	quranServicePkg "github.com/ilmnafi/backend/internal/quran/service"
 	"github.com/ilmnafi/backend/internal/routes"
 	"github.com/ilmnafi/backend/internal/security"
-	sessionRepo "github.com/ilmnafi/backend/internal/auth/repository"
 	userHandler "github.com/ilmnafi/backend/internal/user/handler"
 	userRepo "github.com/ilmnafi/backend/internal/user/repository"
 	userService "github.com/ilmnafi/backend/internal/user/service"
@@ -59,12 +60,14 @@ func main() {
 
 	authService := authService.NewAuthService(authRepo, sessionRepo, emailSvc, passwordSvc, tokenSvc, cfg)
 	userService := userService.NewUserService(userRepo, authRepo)
-	quranService := quranService.NewQuranService(quranRepo)
+	quranService := quranServicePkg.NewQuranService(quranRepo)
+	quranContentService := quranServicePkg.NewContentService(quranProvider.NewQuranProvider(cfg.Quran))
 	adhkarService := adhkarService.NewAdhkarService(adhkarRepo)
 
 	authHdl := authHandler.NewAuthHandler(authService)
 	userHdl := userHandler.NewUserHandler(userService)
 	quranHdl := quranHandler.NewQuranHandler(quranService)
+	quranContentHdl := quranHandler.NewContentHandler(quranContentService)
 	adhkarHdl := adhkarHandler.NewAdhkarHandler(adhkarService)
 
 	rateLimiter := middleware.NewRateLimiter(cfg.RateLimit.Requests, cfg.RateLimit.Window)
@@ -72,7 +75,7 @@ func main() {
 
 	healthChecker := health.NewHealthChecker(db.DB, cfg)
 
-	router := routes.SetupRoutes(authHdl, userHdl, quranHdl, adhkarHdl, authMiddleware, rateLimiter, healthChecker)
+	router := routes.SetupRoutes(authHdl, userHdl, quranHdl, quranContentHdl, adhkarHdl, authMiddleware, rateLimiter, healthChecker)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.Port,
