@@ -12,6 +12,10 @@ database_id = "9b0f8306-8d3f-4b70-904e-6a389fde77ba"
 binding = "RATE_LIMIT"
 id = "5ba77b14815740bfa9abd4d626c0ee33"
 
+# Cloudflare Email Workers (native email sending; requires Workers Paid plan).
+[[send_email]]
+name = "SEND_EMAIL"
+
 [vars]
 JWT_ISSUER = "ilm-nafi"
 ACCESS_TOKEN_EXPIRATION = "900"

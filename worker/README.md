@@ -7,7 +7,7 @@ The backend rewritten as a Cloudflare Worker — fully serverless: **Workers + D
 - **Runtime**: Cloudflare Workers (TypeScript, Hono)
 - **Database**: D1 (SQLite) — schema in `migrations/0001_init.sql`
 - **Rate limiting**: Workers KV (`RATE_LIMIT` namespace)
-- **Email**: MailChannels transactional API
+- **Email**: Cloudflare Email Workers (native send_email binding) with MailChannels fallback
 - **Passwords**: PBKDF2-HMAC-SHA256 via WebCrypto (100,000 iterations — the Workers maximum)
 - **Quran content**: Quran Foundation provider (OAuth2 client credentials)
 
@@ -77,12 +77,18 @@ In the Cloudflare dashboard (or wrangler): add a route for `api.ilmnafi.com` →
 `ilm-naafi-backend` Worker. If you already created a Tunnel CNAME for
 `api.ilmnafi.com`, delete that DNS record first — the Worker replaces it.
 
-## Email (MailChannels) DNS requirements
+## Email (Cloudflare-first)
 
-For MailChannels to send from `noreply@ilmnafi.com`, the domain must have:
+Email is sent through Cloudflare's own email path:
 
-- **SPF**: `TXT` record on the domain → `v=spf1 include:relay.mailchannels.net -all`
-- **DKIM**: `CNAME` `mailchannels._domainkey` → `dkim.mailchannels.net`
+1. **Email Workers** (primary) — the native `send_email` binding already wired
+   in `wrangler.toml`. Requires the **Workers Paid plan**. In the dashboard,
+   enable **Workers & Pages → ilm-naafi-backend → Settings → Email Workers**
+   and make sure `noreply@ilmnafi.com` is on a domain in your account.
+2. **MailChannels** (automatic fallback) — used when the binding is absent or
+   a send is rejected. Needs these DNS records on the sending domain:
+   - **SPF**: `TXT` → `v=spf1 include:relay.mailchannels.net -all`
+   - **DKIM**: `CNAME` `mailchannels._domainkey` → `dkim.mailchannels.net`
 
 ## Free vs paid plan
 

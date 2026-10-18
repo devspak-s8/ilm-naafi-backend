@@ -1,6 +1,7 @@
 export interface Env {
 	DB: D1Database;
 	RATE_LIMIT?: KVNamespace;
+	SEND_EMAIL?: SendEmail;
 	JWT_ACCESS_SECRET: string;
 	JWT_ISSUER: string;
 	ACCESS_TOKEN_EXPIRATION: string;
