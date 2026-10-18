@@ -115,11 +115,28 @@ Same as the Go backend, plus the dua module which was never wired in Go:
 - `/adhkar/*` — categories, adhkar, completions, progress, reminders
 - `/dua/*` — categories, duas (newly wired)
 - `/notifications` — user notifications (list, mark read, read-all)
+- `/notifications/push/subscribe|unsubscribe|subscriptions` — Web Push
+  (VAPID; subscriptions received from the browser Push API)
 - `/auth/passkeys/*` — WebAuthn passkeys (register options/verify,
   login options/verify, list, delete)
-- `/user/settings` — per-user settings (JSON merge)
+- `/user/settings` — per-user settings (JSON merge); `timezone` key
+  (IANA name, e.g. `Africa/Lagos`) makes adhkar reminders fire on the
+  user's local time
 - `/hadith/*` — Sunnah.com content (needs API key)
 - `/health`, `/ready`
+
+## Adhkar reminders & push notifications
+
+- A Cron Trigger runs every 10 minutes and creates notifications for
+  enabled adhkar reminders whose time fell inside the window.
+- Reminder `time` values are the user's **local time**; the timezone comes
+  from `user_settings` (`{"timezone": "Africa/Lagos"}`), default `UTC`.
+- Notifications are also **pushed** to the user's devices when they've
+  subscribed via `POST /notifications/push/subscribe` with a browser
+  `PushSubscription` (`endpoint`, `keys.p256dh`, `keys.auth`).
+- VAPID keys: `VAPID_PUBLIC_KEY` (vars) + `VAPID_PRIVATE_JWK` (secret) —
+  an ES256 P-256 JWK. Generate a fresh pair with:
+  `node -e "const{generateKeyPairSync}=require('node:crypto');const{k}=generateKeyPairSync('ec',{namedCurve:'P-256'});console.log(JSON.stringify(k.export({format:'jwk'})))"`
 
 Response envelope: `{ "success": true, "data": ... }` /
 `{ "success": false, "error": { "code", "message" } }`.

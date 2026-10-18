@@ -23,6 +23,8 @@ export interface Env {
 	PASSKEY_RP_ID: string;
 	PASSKEY_RP_NAME: string;
 	PASSKEY_ORIGIN: string;
+	VAPID_PUBLIC_KEY: string;
+	VAPID_PRIVATE_JWK: string;
 	SUNNAH_API_KEY?: string;
 }
 
