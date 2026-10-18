@@ -1,15 +1,10 @@
-import { EmailMessage } from "cloudflare:email";
 import type { Env } from "./env";
-
-// workers-types declares a 3-arg constructor but the Workers runtime uses
-// EmailMessage(to, from, subject, content) — cast to the real signature.
-type EmailMessageCtor = new (to: string, from: string, subject: string, content: string) => EmailMessage;
-const NewEmailMessage = EmailMessage as unknown as EmailMessageCtor;
 
 /**
  * Email sending — Cloudflare-first.
  *
- * 1. Email Workers (native `send_email` binding, Workers Paid plan).
+ * 1. Cloudflare Email Service (native `send_email` binding; Workers Paid plan
+ *    and the sending domain must be onboarded to Email Service).
  *    Falls back silently if the binding is absent or the send is rejected.
  * 2. MailChannels transactional API (requires the MailChannels SPF/DKIM
  *    DNS records on the sending domain).
@@ -17,10 +12,10 @@ const NewEmailMessage = EmailMessage as unknown as EmailMessageCtor;
 export async function sendEmail(env: Env, to: string, subject: string, html: string): Promise<void> {
 	if (env.SEND_EMAIL) {
 		try {
-			await env.SEND_EMAIL.send(new NewEmailMessage(to, env.EMAIL_FROM, subject, html));
+			await env.SEND_EMAIL.send({ to, from: env.EMAIL_FROM, subject, html });
 			return;
 		} catch (e) {
-			console.error("Email Workers send failed, falling back to MailChannels", e);
+			console.error("Email Service send failed, falling back to MailChannels", e);
 		}
 	}
 	await sendViaMailChannels(env, to, subject, html);
