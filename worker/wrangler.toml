@@ -6,12 +6,11 @@ compatibility_date = "2024-12-05"
 [[d1_databases]]
 binding = "DB"
 database_name = "ilm-naafi-db"
-database_id = "REPLACE_WITH_DATABASE_ID"
+database_id = "9b0f8306-8d3f-4b70-904e-6a389fde77ba"
 
-# Run `npx wrangler kv namespace create RATE_LIMIT` and paste the id here.
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "REPLACE_WITH_KV_ID"
+id = "5ba77b14815740bfa9abd4d626c0ee33"
 
 [vars]
 JWT_ISSUER = "ilm-nafi"
@@ -23,7 +22,7 @@ EMAIL_FROM_NAME = "Ilm Nafi"
 RATE_LIMIT_REQUESTS = "10"
 RATE_LIMIT_WINDOW = "60"
 CORS_ALLOWED_ORIGINS = ""
-PBKDF2_ITERATIONS = "310000"
+PBKDF2_ITERATIONS = "100000"
 QURAN_PROVIDER = "quran_foundation"
 QURAN_FOUNDATION_ENV = "prelive"
 QURAN_PROVIDER_TIMEOUT = "15"

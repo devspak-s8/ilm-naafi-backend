@@ -8,7 +8,7 @@ The backend rewritten as a Cloudflare Worker — fully serverless: **Workers + D
 - **Database**: D1 (SQLite) — schema in `migrations/0001_init.sql`
 - **Rate limiting**: Workers KV (`RATE_LIMIT` namespace)
 - **Email**: MailChannels transactional API
-- **Passwords**: PBKDF2-HMAC-SHA256 via WebCrypto (310,000 iterations default)
+- **Passwords**: PBKDF2-HMAC-SHA256 via WebCrypto (100,000 iterations — the Workers maximum)
 - **Quran content**: Quran Foundation provider (OAuth2 client credentials)
 
 ## Setup
@@ -86,10 +86,11 @@ For MailChannels to send from `noreply@ilmnafi.com`, the domain must have:
 
 ## Free vs paid plan
 
-PBKDF2 at 310,000 iterations needs more CPU than the free tier allows per
-request (10 ms). For development you can lower `PBKDF2_ITERATIONS` to
-`10000`; for production use the **Workers Paid plan ($5/month)** and keep
-310,000+.
+PBKDF2 password hashing needs more CPU than the free tier allows per request
+(10 ms). For development you can lower `PBKDF2_ITERATIONS` to `10000`; for
+production use the **Workers Paid plan ($5/month)**. Cloudflare's WebCrypto
+caps PBKDF2 at 100,000 iterations — the code clamps to that ceiling
+automatically.
 
 ## API surface
 

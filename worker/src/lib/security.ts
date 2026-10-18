@@ -1,6 +1,9 @@
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
+// Cloudflare Workers' WebCrypto caps PBKDF2 at 100,000 iterations.
+export const MAX_PBKDF2_ITERATIONS = 100_000;
+
 export function toB64Url(data: Uint8Array | ArrayBuffer): string {
 	const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
 	let bin = "";
@@ -46,9 +49,10 @@ async function pbkdf2(password: string, salt: Uint8Array, iterations: number): P
 
 /** PBKDF2-HMAC-SHA256, stored as pbkdf2-sha256$<iterations>$<salt>$<hash>. */
 export async function hashPassword(password: string, iterations: number): Promise<string> {
+	const clamped = Math.min(Math.max(iterations, 10_000), MAX_PBKDF2_ITERATIONS);
 	const salt = crypto.getRandomValues(new Uint8Array(16));
-	const key = await pbkdf2(password, salt, iterations);
-	return `pbkdf2-sha256$${iterations}$${toB64Url(salt)}$${toB64Url(key)}`;
+	const key = await pbkdf2(password, salt, clamped);
+	return `pbkdf2-sha256$${clamped}$${toB64Url(salt)}$${toB64Url(key)}`;
 }
 
 /**
@@ -59,7 +63,7 @@ export async function hashPassword(password: string, iterations: number): Promis
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
 	const parts = stored.split("$");
 	if (parts[0] !== "pbkdf2-sha256" || parts.length !== 4) return false;
-	const iterations = parseInt(parts[1], 10);
+	const iterations = Math.min(parseInt(parts[1], 10), MAX_PBKDF2_ITERATIONS);
 	if (!Number.isFinite(iterations) || iterations <= 0) return false;
 	const salt = fromB64Url(parts[2]);
 	const expected = fromB64Url(parts[3]);
