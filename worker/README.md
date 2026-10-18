@@ -126,12 +126,24 @@ npm run dev           # http://localhost:8787
 
 ## Seeding content data
 
-Quran/adkhar tables start empty. Seed them with SQL files:
+The **full Hisnul Muslim (Fortress of the Muslim) book** is available as a
+seed — 132 chapters, 267 adhkar with Arabic text, English translation,
+transliteration (85%), repeat counts, audio URLs, and source references
+(83%). Generated from MIT-licensed datasets (asellam/HisnElMuslim,
+YousefAsalya/Islamic-Pro-azkar-API, uthumany/hisn-al-muslim-api).
 
 ```bash
-# write INSERT statements to a file (e.g. seed.sql), then:
-npx wrangler d1 execute ilm-naafi-db --remote --file=./seed.sql
-npx wrangler d1 execute ilm-naafi-db --local  --file=./seed.sql
+# production
+npx wrangler d1 execute ilm-naafi-db --remote --file=./seed/hisnul_muslim_seed.sql
+
+# local
+npx wrangler d1 execute ilm-naafi-db --local --file=./seed/hisnul_muslim_seed.sql
+```
+
+To rebuild the seed SQL after changing the source datasets:
+
+```bash
+python build_seed.py   # (script kept with the datasets; see repo history)
 ```
 
 ## Differences from the Go version
