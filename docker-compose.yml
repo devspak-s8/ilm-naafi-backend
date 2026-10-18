@@ -17,6 +17,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   server:
     build: .
@@ -53,6 +54,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    restart: unless-stopped
 
   # Cloudflare Tunnel: exposes the API to the internet without opening any
   # inbound ports. Start with:
