@@ -2,6 +2,12 @@
 
 Production-ready authentication backend for the Ilm Nafi Islamic learning platform.
 
+> **Cloudflare deployment**: the backend now also ships as a fully serverless
+> **Cloudflare Worker** (Workers + D1 + KV + MailChannels) — see
+> [`worker/README.md`](worker/README.md). No VPS or Docker needed. The Go
+> code below remains the reference implementation and powers the importer
+> tools.
+
 ## Tech Stack
 
 - **Language**: Go 1.22+

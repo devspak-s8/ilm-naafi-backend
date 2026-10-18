@@ -1,0 +1,29 @@
+name = "ilm-naafi-backend"
+main = "src/index.ts"
+compatibility_date = "2024-12-05"
+
+# Run `npx wrangler d1 create ilm-naafi-db` and paste the id here.
+[[d1_databases]]
+binding = "DB"
+database_name = "ilm-naafi-db"
+database_id = "REPLACE_WITH_DATABASE_ID"
+
+# Run `npx wrangler kv namespace create RATE_LIMIT` and paste the id here.
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "REPLACE_WITH_KV_ID"
+
+[vars]
+JWT_ISSUER = "ilm-nafi"
+ACCESS_TOKEN_EXPIRATION = "900"
+REFRESH_TOKEN_EXPIRATION = "604800"
+APP_URL = "https://api.ilmnafi.com"
+EMAIL_FROM = "noreply@ilmnafi.com"
+EMAIL_FROM_NAME = "Ilm Nafi"
+RATE_LIMIT_REQUESTS = "10"
+RATE_LIMIT_WINDOW = "60"
+CORS_ALLOWED_ORIGINS = ""
+PBKDF2_ITERATIONS = "310000"
+QURAN_PROVIDER = "quran_foundation"
+QURAN_FOUNDATION_ENV = "prelive"
+QURAN_PROVIDER_TIMEOUT = "15"

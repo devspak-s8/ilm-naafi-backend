@@ -44,3 +44,9 @@ bin/
 *.pem
 *.key
 *.p12
+
+# Cloudflare Worker
+worker/node_modules/
+worker/.wrangler/
+worker/.dev.vars
+worker/dist/
