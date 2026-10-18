@@ -48,36 +48,12 @@ adhkarRoutes.get("/categories/:id/adhkar", async (c) => {
 	return ok(c, res.results);
 });
 
-// GET /adhkar/:slug  (registered before /:id for parity with the Go router)
-adhkarRoutes.get("/:slug", async (c) => {
-	const slug = c.req.param("slug");
-	if (!slug) return error(c, 400, "VALIDATION_ERROR", "INVALID_SLUG");
-	const name = SLUG_MAP[slug.toLowerCase()] ?? slug;
-	const category = await c.env.DB.prepare("SELECT id FROM dhikr_categories WHERE name = ? AND is_active = 1 LIMIT 1").bind(name).first();
-	if (!category) return error(c, 404, "NOT_FOUND", "ADHKAR_NOT_FOUND");
-	const res = await c.env.DB.prepare(`SELECT ${DHIKR_COLS} FROM adhkar WHERE category_id = ? AND is_active = 1 ORDER BY sort_order ASC`)
-		.bind((category as { id: number }).id)
-		.all();
-	return ok(c, res.results);
-});
-
-// GET /adhkar/:id  (dhikr with sources; parity fallback)
-adhkarRoutes.get("/:id", async (c) => {
-	const id = parseID(c.req.param("id"));
-	if (id === null) return error(c, 400, "INVALID_DHIKR_ID", "Invalid dhikr id");
-	const dhikr = await c.env.DB.prepare(`SELECT ${DHIKR_COLS} FROM adhkar WHERE id = ?`).bind(id).first();
-	if (!dhikr) return error(c, 404, "NOT_FOUND", "ADHKAR_NOT_FOUND");
-	const sources = await c.env.DB.prepare(`SELECT ${SOURCE_COLS} FROM adhkar_sources WHERE dhikr_id = ?`).bind(id).all();
-	return ok(c, { dhikr, sources: sources.results });
-});
-
 // ---- authenticated adhkar routes --------------------------------------
 
 const adhkarProtected = new Hono<AppEnv>();
-adhkarProtected.use("*", authRequired);
 
 // POST /adhkar/:id/complete
-adhkarProtected.post("/:id/complete", async (c) => {
+adhkarProtected.post("/:id/complete", authRequired, async (c) => {
 	const id = parseID(c.req.param("id"));
 	if (id === null) return error(c, 400, "INVALID_DHIKR_ID", "Invalid dhikr id");
 	let increment = 1;
@@ -129,7 +105,7 @@ adhkarProtected.post("/:id/complete", async (c) => {
 });
 
 // GET /adhkar/progress/today?date=
-adhkarProtected.get("/progress/today", async (c) => {
+adhkarProtected.get("/progress/today", authRequired, async (c) => {
 	const userId = c.get("userId");
 	const date = c.req.query("date") || todayUTC();
 	const progress: Record<string, unknown> = { date };
@@ -174,7 +150,7 @@ adhkarProtected.get("/progress/today", async (c) => {
 });
 
 // GET /adhkar/progress/history?days=
-adhkarProtected.get("/progress/history", async (c) => {
+adhkarProtected.get("/progress/history", authRequired, async (c) => {
 	const userId = c.get("userId");
 	let days = parseInt(c.req.query("days") ?? "", 10);
 	if (!Number.isFinite(days) || days <= 0) days = 7;
@@ -195,7 +171,7 @@ adhkarProtected.get("/progress/history", async (c) => {
 });
 
 // POST /adhkar/reminders
-adhkarProtected.post("/reminders", async (c) => {
+adhkarProtected.post("/reminders", authRequired, async (c) => {
 	const userId = c.get("userId");
 	let body: { category_id?: number; enabled?: boolean; time?: string; notification_type?: string };
 	try {
@@ -221,7 +197,7 @@ adhkarProtected.post("/reminders", async (c) => {
 });
 
 // PUT /adhkar/reminders/:id
-adhkarProtected.put("/reminders/:id", async (c) => {
+adhkarProtected.put("/reminders/:id", authRequired, async (c) => {
 	const userId = c.get("userId");
 	const id = parseID(c.req.param("id"));
 	if (id === null) return error(c, 400, "INVALID_CATEGORY_ID", "Invalid category id");
@@ -240,7 +216,7 @@ adhkarProtected.put("/reminders/:id", async (c) => {
 });
 
 // GET /adhkar/reminders
-adhkarProtected.get("/reminders", async (c) => {
+adhkarProtected.get("/reminders", authRequired, async (c) => {
 	const res = await c.env.DB.prepare(
 		"SELECT id, user_id, category_id, enabled, time, notification_type, created_at, updated_at FROM adhkar_reminders WHERE user_id = ?",
 	)
@@ -250,7 +226,7 @@ adhkarProtected.get("/reminders", async (c) => {
 });
 
 // DELETE /adhkar/reminders/:id
-adhkarProtected.delete("/reminders/:id", async (c) => {
+adhkarProtected.delete("/reminders/:id", authRequired, async (c) => {
 	const userId = c.get("userId");
 	const id = parseID(c.req.param("id"));
 	if (id === null) return error(c, 400, "INVALID_CATEGORY_ID", "Invalid category id");
@@ -259,3 +235,26 @@ adhkarProtected.delete("/reminders/:id", async (c) => {
 });
 
 adhkarRoutes.route("/", adhkarProtected);
+
+// GET /adhkar/:param â€” registered LAST so protected routes (/reminders) win.
+// Numeric = dhikr by id (with sources), otherwise slug.
+adhkarRoutes.get("/:param", async (c) => {
+	const param = c.req.param("param");
+	if (!param) return error(c, 400, "VALIDATION_ERROR", "INVALID_SLUG");
+
+	if (/^\d+$/.test(param)) {
+		const id = parseInt(param, 10);
+		const dhikr = await c.env.DB.prepare(`SELECT ${DHIKR_COLS} FROM adhkar WHERE id = ?`).bind(id).first();
+		if (!dhikr) return error(c, 404, "NOT_FOUND", "ADHKAR_NOT_FOUND");
+		const sources = await c.env.DB.prepare(`SELECT ${SOURCE_COLS} FROM adhkar_sources WHERE dhikr_id = ?`).bind(id).all();
+		return ok(c, { dhikr, sources: sources.results });
+	}
+
+	const name = SLUG_MAP[param.toLowerCase()] ?? param;
+	const category = await c.env.DB.prepare("SELECT id FROM dhikr_categories WHERE name = ? AND is_active = 1 LIMIT 1").bind(name).first();
+	if (!category) return error(c, 404, "NOT_FOUND", "ADHKAR_NOT_FOUND");
+	const res = await c.env.DB.prepare(`SELECT ${DHIKR_COLS} FROM adhkar WHERE category_id = ? AND is_active = 1 ORDER BY sort_order ASC`)
+		.bind((category as { id: number }).id)
+		.all();
+	return ok(c, res.results);
+});

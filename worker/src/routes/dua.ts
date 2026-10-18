@@ -59,7 +59,8 @@ duaRoutes.get("/slug/:slug", async (c) => {
 	if (!slug) return error(c, 400, "VALIDATION_ERROR", "INVALID_SLUG");
 	const name = SLUG_MAP[slug.toLowerCase()] ?? slug.toLowerCase();
 	const res = await c.env.DB.prepare(
-		`SELECT ${DUA_COLS.replaceAll("d.", "")} FROM duas d JOIN dhikr_categories c ON d.category_id = c.id
+		`SELECT d.id, d.category_id, d.title, d.arabic_text, d.transliteration, d.translation, d.source_id, d.audio_url, d.sort_order, d.is_active, d.created_at, d.updated_at
+		 FROM duas d JOIN dhikr_categories c ON d.category_id = c.id
 		 WHERE c.name = ? AND d.is_active = 1 ORDER BY d.sort_order ASC`,
 	).bind(name).all();
 	if (res.results.length === 0) return error(c, 404, "NOT_FOUND", "DUA_NOT_FOUND");

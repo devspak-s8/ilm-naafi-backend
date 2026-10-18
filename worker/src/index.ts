@@ -9,6 +9,7 @@ import { quranRoutes } from "./routes/quran";
 import { contentRoutes } from "./routes/content";
 import { adhkarRoutes } from "./routes/adhkar";
 import { duaRoutes } from "./routes/dua";
+import { hadithRoutes } from "./routes/hadith";
 import { healthRoutes } from "./routes/health";
 
 const app = new Hono<AppEnv>();
@@ -67,6 +68,7 @@ app.route("/quran", quranRoutes);
 app.route("/api/v1/quran", contentRoutes);
 app.route("/adhkar", adhkarRoutes);
 app.route("/dua", duaRoutes);
+app.route("/hadith", hadithRoutes);
 
 app.notFound((c) => error(c, 404, "NOT_FOUND", "Not found"));
 
