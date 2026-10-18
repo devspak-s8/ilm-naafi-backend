@@ -189,7 +189,8 @@ adhkarProtected.post("/reminders", authRequired, async (c) => {
 		 VALUES (?, ?, ?, ?, ?, ?, ?)
 		 ON CONFLICT (user_id, category_id) DO UPDATE SET
 		   enabled = excluded.enabled, time = excluded.time,
-		   notification_type = excluded.notification_type, updated_at = excluded.updated_at`,
+		   notification_type = excluded.notification_type, updated_at = excluded.updated_at,
+		   last_reminded_at = NULL`,
 	)
 		.bind(userId, categoryID, body.enabled === false ? 0 : 1, body.time ?? "", notifType, nowISO(), nowISO())
 		.run();
@@ -208,7 +209,7 @@ adhkarProtected.put("/reminders/:id", authRequired, async (c) => {
 		return error(c, 400, "INVALID_REQUEST", "Invalid body");
 	}
 	await c.env.DB.prepare(
-		"UPDATE adhkar_reminders SET enabled = ?, time = ?, notification_type = ?, updated_at = ? WHERE user_id = ? AND category_id = ?",
+		"UPDATE adhkar_reminders SET enabled = ?, time = ?, notification_type = ?, updated_at = ?, last_reminded_at = NULL WHERE user_id = ? AND category_id = ?",
 	)
 		.bind(body.enabled === false ? 0 : 1, body.time ?? "", body.notification_type || "normal", nowISO(), userId, id)
 		.run();

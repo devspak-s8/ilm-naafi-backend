@@ -16,6 +16,10 @@ id = "5ba77b14815740bfa9abd4d626c0ee33"
 [[send_email]]
 name = "SEND_EMAIL"
 
+# Adhkar reminders run every 10 minutes.
+[triggers]
+crons = ["*/10 * * * *"]
+
 [vars]
 JWT_ISSUER = "ilm-nafi"
 ACCESS_TOKEN_EXPIRATION = "900"

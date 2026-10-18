@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import type { MiddlewareHandler } from "hono";
-import type { AppEnv } from "./lib/env";
+import type { AppEnv, Env } from "./lib/env";
 import { error, handleError } from "./lib/response";
 import { clientIP } from "./lib/request";
+import { runAdhkarReminders } from "./scheduled";
 import { authRoutes } from "./routes/auth";
 import { userRoutes } from "./routes/user";
 import { quranRoutes } from "./routes/quran";
@@ -83,4 +84,9 @@ app.onError((err, c) => {
 	return handleError(c, err);
 });
 
-export default app;
+export default {
+	fetch: app.fetch,
+	async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext) {
+		await runAdhkarReminders(env);
+	},
+} satisfies ExportedHandler<Env>;
