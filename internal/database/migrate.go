@@ -9,20 +9,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ilmnafi/backend/internal/config"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
 )
 
-func RunMigrations(db *sqlx.DB, cfg *config.Config) error {
+func RunMigrations(db *sqlx.DB) error {
 	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to create migration driver: %w", err)
 	}
 
-	m, err := migrate.NewWithInstance("file", nil, cfg.Database.URL, driver)
+	m, err := migrate.NewWithDatabaseInstance("file://migrations", "", driver)
 	if err != nil {
 		return fmt.Errorf("failed to create migration instance: %w", err)
 	}

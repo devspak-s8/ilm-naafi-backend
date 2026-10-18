@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	adhkarHandler "github.com/ilmnafi/backend/internal/adhkar/handler"
 	authHandler "github.com/ilmnafi/backend/internal/auth/handler"
+	"github.com/ilmnafi/backend/internal/config"
 	"github.com/ilmnafi/backend/internal/health"
 	"github.com/ilmnafi/backend/internal/middleware"
 	quranHandler "github.com/ilmnafi/backend/internal/quran/handler"
@@ -13,6 +14,7 @@ import (
 )
 
 func SetupRoutes(
+	cfg *config.Config,
 	authHdl *authHandler.AuthHandler,
 	userHdl *userHandler.UserHandler,
 	quranHdl *quranHandler.QuranHandler,
@@ -24,8 +26,13 @@ func SetupRoutes(
 ) *mux.Router {
 	r := mux.NewRouter()
 
+	// RealIPMiddleware must be first so the real client IP (from
+	// CF-Connecting-IP when behind Cloudflare) is visible to the rate
+	// limiter, logging, and handlers below.
+	r.Use(middleware.RealIPMiddleware(cfg.Server.TrustProxyHeaders))
 	r.Use(middleware.LoggingMiddleware)
 	r.Use(middleware.SecurityHeadersMiddleware)
+	r.Use(middleware.CORS(cfg.CORS.AllowedOrigins))
 
 	r.HandleFunc("/health", healthChecker.Check).Methods("GET")
 	r.HandleFunc("/ready", healthChecker.Ready).Methods("GET")

@@ -18,6 +18,7 @@ type Config struct {
 	AppURL    string
 	RateLimit RateLimitConfig
 	Token     TokenConfig
+	CORS      CORSConfig
 }
 
 type QuranConfig struct {
@@ -31,10 +32,15 @@ type QuranConfig struct {
 }
 
 type ServerConfig struct {
-	Port         string
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-	IdleTimeout  time.Duration
+	Port              string
+	ReadTimeout       time.Duration
+	ReadHeaderTimeout time.Duration
+	WriteTimeout      time.Duration
+	IdleTimeout       time.Duration
+	// TrustProxyHeaders enables honouring Cloudflare/proxy client-IP headers
+	// (CF-Connecting-IP, X-Forwarded-For, X-Real-IP). Enable only when the
+	// origin is reachable exclusively through Cloudflare/proxy.
+	TrustProxyHeaders bool
 }
 
 type DatabaseConfig struct {
@@ -77,6 +83,11 @@ type TokenConfig struct {
 	RefreshExpiration time.Duration
 }
 
+// CORSConfig holds the allowed cross-origin origins (frontend domains).
+type CORSConfig struct {
+	AllowedOrigins []string
+}
+
 func Load() (*Config, error) {
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
@@ -90,10 +101,12 @@ func Load() (*Config, error) {
 
 	cfg := &Config{
 		Server: ServerConfig{
-			Port:         getEnv("SERVER_PORT", "8080"),
-			ReadTimeout:  getDuration("SERVER_READ_TIMEOUT", 15*time.Second),
-			WriteTimeout: getDuration("SERVER_WRITE_TIMEOUT", 15*time.Second),
-			IdleTimeout:  getDuration("SERVER_IDLE_TIMEOUT", 60*time.Second),
+			Port:              getEnv("SERVER_PORT", "8080"),
+			ReadTimeout:       getDuration("SERVER_READ_TIMEOUT", 15*time.Second),
+			ReadHeaderTimeout: getDuration("SERVER_READ_HEADER_TIMEOUT", 5*time.Second),
+			WriteTimeout:      getDuration("SERVER_WRITE_TIMEOUT", 15*time.Second),
+			IdleTimeout:       getDuration("SERVER_IDLE_TIMEOUT", 60*time.Second),
+			TrustProxyHeaders: viper.GetBool("TRUST_PROXY_HEADERS"),
 		},
 		Database: DatabaseConfig{
 			URL:             viper.GetString("DATABASE_URL"),
@@ -139,6 +152,9 @@ func Load() (*Config, error) {
 			AccessExpiration:  getDuration("ACCESS_TOKEN_EXPIRATION", 15*time.Minute),
 			RefreshExpiration: getDuration("REFRESH_TOKEN_EXPIRATION", 7*24*time.Hour),
 		},
+		CORS: CORSConfig{
+			AllowedOrigins: splitCSV(viper.GetString("CORS_ALLOWED_ORIGINS")),
+		},
 	}
 
 	if err := cfg.Validate(); err != nil {
@@ -179,4 +195,20 @@ func getDuration(key string, defaultVal time.Duration) time.Duration {
 		return val
 	}
 	return defaultVal
+}
+
+// splitCSV splits a comma-separated environment value into trimmed,
+// non-empty entries.
+func splitCSV(value string) []string {
+	if value == "" {
+		return nil
+	}
+	parts := strings.Split(value, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }

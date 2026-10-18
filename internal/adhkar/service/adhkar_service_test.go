@@ -168,9 +168,10 @@ func TestGetDailyProgress(t *testing.T) {
 		completions: map[string]*model.AdhkarCompletion{},
 	}
 	svc := service.NewAdhkarService(repo)
-	p, err := svc.GetDailyProgress(context.Background(), "user-1", time.Now().UTC().Format("2006-01-02"))
+	today := time.Now().UTC().Format("2006-01-02")
+	p, err := svc.GetDailyProgress(context.Background(), "user-1", today)
 	require.NoError(t, err)
-	assert.Equal(t, time.Now().UTC().Format("2006-01-02"), p.Date)
+	assert.Equal(t, today, p.Date)
 }
 
 var _ repository.AdhkarRepository = (*fakeAdhkarRepo)(nil)

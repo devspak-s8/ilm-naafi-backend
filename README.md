@@ -89,6 +89,10 @@ migrations/                    # SQL migration files
 | `EMAIL_FROM_NAME` | No | Sender display name |
 | `APP_URL` | Yes | Application base URL |
 | `SERVER_PORT` | No | Server port (default: 8080) |
+| `SERVER_READ_HEADER_TIMEOUT` | No | Header read timeout (default: 5s) |
+| `TRUST_PROXY_HEADERS` | No | Honor `CF-Connecting-IP`/`X-Forwarded-For` client IPs. Set `true` when behind Cloudflare (default: false) |
+| `CORS_ALLOWED_ORIGINS` | No | Comma-separated frontend origins allowed cross-origin |
+| `CLOUDFLARE_TUNNEL_TOKEN` | No* | Tunnel token for the cloudflared compose service (*required with `--profile cloudflare`) |
 | `ACCESS_TOKEN_EXPIRATION` | No | Access token TTL (default: 15m) |
 | `REFRESH_TOKEN_EXPIRATION` | No | Refresh token TTL (default: 168h) |
 | `RATE_LIMIT_REQUESTS` | No | Rate limit requests per window (default: 100) |
@@ -257,6 +261,69 @@ Content-Type: application/json
 - Session management
 - Audit logging
 - Security headers
+
+## Cloudflare Deployment
+
+The backend is fully compatible with Cloudflare and can be exposed to the
+internet with **zero open inbound ports** using a Cloudflare Tunnel.
+
+### 1. Create a Cloudflare Tunnel
+
+```bash
+cloudflared tunnel login
+cloudflared tunnel create ilm-nafi-api
+cloudflared tunnel route dns ilm-nafi-api api.ilmnafi.com
+```
+
+This prints a tunnel ID and stores credentials in `~/.cloudflared/`.
+
+### 2. Get a tunnel token
+
+The easiest way to run the tunnel in Docker is a token (from the
+[Zero Trust dashboard](https://one.dash.cloudflare.com/) → Networks →
+Tunnels → your tunnel → Configure):
+
+```bash
+cloudflared tunnel token ilm-nafi-api
+```
+
+Copy the token into `.env` as `CLOUDFLARE_TUNNEL_TOKEN`.
+
+### 3. Configure the app
+
+```bash
+# Requests arrive from Cloudflare, so read the real client IP from its headers
+TRUST_PROXY_HEADERS=true
+# Allow your frontend origin(s)
+CORS_ALLOWED_ORIGINS=https://app.ilmnafi.com
+```
+
+### 4. Start the stack
+
+```bash
+docker compose --profile cloudflare up -d
+```
+
+The tunnel then forwards `api.ilmnafi.com` to the internal `server` container.
+In production you can remove the `ports:` mapping on the `server` service so
+the API is reachable **only** through Cloudflare.
+
+### Important Cloudflare notes
+
+- **Client IPs**: with `TRUST_PROXY_HEADERS=true` the app resolves the real
+  client IP from `CF-Connecting-IP` (fallback: `X-Forwarded-For`,
+  `X-Real-IP`) for rate limiting and audit logs. Keep it `false` if the
+  origin is directly reachable — forwarded headers can be spoofed.
+- **SSL/TLS mode**: use **Full (strict)** on the Cloudflare hostname.
+- **Caching**: API responses are not cached by default (no `Cache-Control:
+  public`). If you add Cloudflare Cache Rules, exclude `/auth/*`,
+  `/user/*` and any authenticated endpoints.
+- **Health checks**: point Cloudflare health checks / load balancer monitors
+  at `/health` or `/ready`.
+- **Rate limiting**: Cloudflare rate limiting rules complement the app-level
+  limiter; configure both (Cloudflare at the edge, app per-endpoint).
+- **Firewall**: for defense in depth, restrict inbound traffic to the origin
+  to Cloudflare's IP ranges only.</think>
 
 ## Running Tests
 

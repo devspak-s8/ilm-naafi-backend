@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/ilmnafi/backend/internal/auth/model"
 	"github.com/ilmnafi/backend/internal/auth/service"
@@ -255,12 +254,8 @@ func handleError(w http.ResponseWriter, err error) {
 }
 
 func getIP(r *http.Request) string {
-	if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
-		return strings.Split(fwd, ",")[0]
-	}
-	if fwd := r.Header.Get("X-Real-IP"); fwd != "" {
-		return fwd
-	}
+	// RealIPMiddleware has already resolved the real client IP
+	// (CF-Connecting-IP / X-Forwarded-For when behind Cloudflare).
 	return r.RemoteAddr
 }
 

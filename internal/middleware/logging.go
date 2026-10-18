@@ -10,6 +10,10 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		next.ServeHTTP(w, r)
+		if ray := r.Header.Get("CF-Ray"); ray != "" {
+			log.Printf("%s %s %s cf-ray=%s %s", r.Method, r.URL.Path, r.RemoteAddr, ray, time.Since(start))
+			return
+		}
 		log.Printf("%s %s %s %s", r.Method, r.URL.Path, r.RemoteAddr, time.Since(start))
 	})
 }

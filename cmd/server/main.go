@@ -44,7 +44,7 @@ func main() {
 	}
 	defer db.Close()
 
-	if err := database.RunMigrations(db, cfg); err != nil {
+	if err := database.RunMigrations(db); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
@@ -70,19 +70,20 @@ func main() {
 	quranContentHdl := quranHandler.NewContentHandler(quranContentService)
 	adhkarHdl := adhkarHandler.NewAdhkarHandler(adhkarService)
 
-	rateLimiter := middleware.NewRateLimiter(cfg.RateLimit.Requests, cfg.RateLimit.Window)
+	rateLimiter := middleware.NewRateLimiter(cfg.RateLimit.Requests, cfg.RateLimit.Window, cfg.Server.TrustProxyHeaders)
 	authMiddleware := middleware.AuthMiddleware(cfg)
 
 	healthChecker := health.NewHealthChecker(db.DB, cfg)
 
-	router := routes.SetupRoutes(authHdl, userHdl, quranHdl, quranContentHdl, adhkarHdl, authMiddleware, rateLimiter, healthChecker)
+router := routes.SetupRoutes(cfg, authHdl, userHdl, quranHdl, quranContentHdl, adhkarHdl, authMiddleware, rateLimiter, healthChecker)
 
 	srv := &http.Server{
-		Addr:         ":" + cfg.Server.Port,
-		Handler:      router,
-		ReadTimeout:  cfg.Server.ReadTimeout,
-		WriteTimeout: cfg.Server.WriteTimeout,
-		IdleTimeout:  cfg.Server.IdleTimeout,
+		Addr:              ":" + cfg.Server.Port,
+		Handler:           router,
+		ReadTimeout:       cfg.Server.ReadTimeout,
+		ReadHeaderTimeout: cfg.Server.ReadHeaderTimeout,
+		WriteTimeout:      cfg.Server.WriteTimeout,
+		IdleTimeout:       cfg.Server.IdleTimeout,
 	}
 
 	go func() {
