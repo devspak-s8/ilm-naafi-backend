@@ -64,25 +64,33 @@ async function oauthToken(cfg: ProviderConfig): Promise<string> {
 	if (!cfg.clientID || !cfg.clientSecret) {
 		throw newAppError(503, "QURAN_PROVIDER_UNAVAILABLE", "Quran Foundation credentials are not configured");
 	}
-	const body = new URLSearchParams({ grant_type: "client_credentials", scope: "content search" });
-	const res = await fetchWithTimeout(
-		`${cfg.oauthBaseURL}/oauth2/token`,
-		{
-			method: "POST",
-			headers: {
-				"content-type": "application/x-www-form-urlencoded",
-				authorization: `Basic ${btoa(`${cfg.clientID}:${cfg.clientSecret}`)}`,
+	// "content search" requires QF approval for search; fall back to content-only.
+	for (const scope of ["content search", "content"]) {
+		const body = new URLSearchParams({ grant_type: "client_credentials", scope });
+		const res = await fetchWithTimeout(
+			`${cfg.oauthBaseURL}/oauth2/token`,
+			{
+				method: "POST",
+				headers: {
+					"content-type": "application/x-www-form-urlencoded",
+					authorization: `Basic ${btoa(`${cfg.clientID}:${cfg.clientSecret}`)}`,
+				},
+				body: body.toString(),
 			},
-			body: body.toString(),
-		},
-		cfg.timeoutSeconds,
-	);
-	if (!res.ok) throw providerStatusError(res.status);
-	const data = (await res.json()) as { access_token?: string; expires_in?: number };
-	if (!data.access_token) throw newAppError(502, "QURAN_PROVIDER_INVALID_RESPONSE", "token response did not contain access_token");
-	const expires = data.expires_in && data.expires_in > 0 ? data.expires_in : 3600;
-	tokenCache = { token: data.access_token, expiresAt: Date.now() + (expires - 60) * 1000 };
-	return data.access_token;
+			cfg.timeoutSeconds,
+		);
+		if (res.status === 400 || res.status === 401) {
+			console.error(`Quran OAuth rejected scope "${scope}": ${res.status} ${await res.text().catch(() => "").then((t) => t.slice(0, 300))}`);
+			continue;
+		}
+		if (!res.ok) throw providerStatusError(res.status);
+		const data = (await res.json()) as { access_token?: string; expires_in?: number };
+		if (!data.access_token) throw newAppError(502, "QURAN_PROVIDER_INVALID_RESPONSE", "token response did not contain access_token");
+		const expires = data.expires_in && data.expires_in > 0 ? data.expires_in : 3600;
+		tokenCache = { token: data.access_token, expiresAt: Date.now() + (expires - 60) * 1000 };
+		return data.access_token;
+	}
+	throw newAppError(502, "QURAN_PROVIDER_UNAUTHORIZED", "OAuth token request rejected for all scopes");
 }
 
 function providerStatusError(status: number) {
@@ -140,7 +148,11 @@ async function providerGet(env: Env, endpoint: string, params: Record<string, st
 			cfg.timeoutSeconds,
 		);
 	}
-	if (!res.ok) throw providerStatusError(res.status);
+	if (!res.ok) {
+		const body = await res.text().catch(() => "");
+		console.error(`Quran provider ${res.status} for ${url}: ${body.slice(0, 500)}`);
+		throw providerStatusError(res.status);
+	}
 	return res.json();
 }
 
