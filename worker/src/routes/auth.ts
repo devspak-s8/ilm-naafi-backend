@@ -3,8 +3,9 @@ import type { AppEnv, Env } from "../lib/env";
 import { intEnv } from "../lib/env";
 import { hashPassword, isValidEmail, nowISO, randomToken, tokenHash, validatePassword, verifyPassword } from "../lib/security";
 import { signAccessToken } from "../lib/jwt";
-import { sendPasswordResetEmail, sendVerificationEmail } from "../lib/email";
+import { sendPasswordResetEmail, sendSecurityNotification, sendVerificationEmail, sendWelcomeEmail } from "../lib/email";
 import { clientIP, userAgent } from "../lib/request";
+import { createNotification } from "./notifications";
 import { authRequired } from "../middleware/auth";
 import { rateLimit } from "../middleware/rate-limit";
 import { created, error, ok } from "../lib/response";
@@ -175,6 +176,16 @@ authRoutes.post("/register", async (c) => {
 		.run();
 	await audit(env, userId, "registration", clientIP(c), userAgent(c));
 	c.executionCtx.waitUntil(sendVerificationEmail(env, email, token));
+	c.executionCtx.waitUntil(sendWelcomeEmail(env, email, name));
+	c.executionCtx.waitUntil(
+		createNotification(
+			env,
+			userId,
+			"welcome",
+			"Welcome to Ilm Nafi",
+			"Your account has been created. Verify your email to get started.",
+		),
+	);
 
 	let tokens;
 	try {
@@ -407,6 +418,16 @@ authRoutes.post("/reset-password", rateLimit("reset-password"), async (c) => {
 	await env.DB.prepare("UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL").bind(nowISO(), user.id).run();
 	await env.DB.prepare("UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL").bind(nowISO(), user.id).run();
 	await audit(env, user.id, "password_reset", clientIP(c), userAgent(c));
+	c.executionCtx.waitUntil(sendSecurityNotification(env, user.email, "Your Ilm Nafi password was reset. If this was not you, contact support."));
+	c.executionCtx.waitUntil(
+		createNotification(
+			env,
+			user.id,
+			"security",
+			"Password reset",
+			"Your account password was reset. All sessions have been signed out.",
+		),
+	);
 
 	return ok(c, { message: "Password has been reset successfully" });
 });

@@ -7,7 +7,9 @@ The backend rewritten as a Cloudflare Worker — fully serverless: **Workers + D
 - **Runtime**: Cloudflare Workers (TypeScript, Hono)
 - **Database**: D1 (SQLite) — schema in `migrations/0001_init.sql`
 - **Rate limiting**: Workers KV (`RATE_LIMIT` namespace)
-- **Email**: Cloudflare Email Workers (native send_email binding) with MailChannels fallback
+- **Email**: Cloudflare Email Service (native send_email binding) with MailChannels fallback
+- **Passkeys**: WebAuthn via @simplewebauthn/server
+- **Emails sent**: verification, welcome, password reset, security notifications
 - **Passwords**: PBKDF2-HMAC-SHA256 via WebCrypto (100,000 iterations — the Workers maximum)
 - **Quran content**: Quran Foundation provider (OAuth2 client credentials)
 
@@ -112,6 +114,11 @@ Same as the Go backend, plus the dua module which was never wired in Go:
   pages, search, resources)
 - `/adhkar/*` — categories, adhkar, completions, progress, reminders
 - `/dua/*` — categories, duas (newly wired)
+- `/notifications` — user notifications (list, mark read, read-all)
+- `/auth/passkeys/*` — WebAuthn passkeys (register options/verify,
+  login options/verify, list, delete)
+- `/user/settings` — per-user settings (JSON merge)
+- `/hadith/*` — Sunnah.com content (needs API key)
 - `/health`, `/ready`
 
 Response envelope: `{ "success": true, "data": ... }` /

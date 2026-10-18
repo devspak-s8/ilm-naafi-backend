@@ -20,6 +20,10 @@ export interface Env {
 	QURAN_FOUNDATION_API_BASE_URL?: string;
 	QURAN_FOUNDATION_OAUTH_BASE_URL?: string;
 	QURAN_PROVIDER_TIMEOUT: string;
+	PASSKEY_RP_ID: string;
+	PASSKEY_RP_NAME: string;
+	PASSKEY_ORIGIN: string;
+	SUNNAH_API_KEY?: string;
 }
 
 export type AppEnv = {

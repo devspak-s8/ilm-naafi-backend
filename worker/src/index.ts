@@ -11,6 +11,9 @@ import { adhkarRoutes } from "./routes/adhkar";
 import { duaRoutes } from "./routes/dua";
 import { hadithRoutes } from "./routes/hadith";
 import { healthRoutes } from "./routes/health";
+import { notificationRoutes } from "./routes/notifications";
+import { passkeyRoutes } from "./routes/passkeys";
+import { settingsRoutes } from "./routes/settings";
 
 const app = new Hono<AppEnv>();
 
@@ -63,7 +66,10 @@ app.use("*", cors);
 
 app.route("/", healthRoutes);
 app.route("/auth", authRoutes);
+app.route("/auth/passkeys", passkeyRoutes);
 app.route("/user", userRoutes);
+app.route("/user", settingsRoutes);
+app.route("/notifications", notificationRoutes);
 app.route("/quran", quranRoutes);
 app.route("/api/v1/quran", contentRoutes);
 app.route("/adhkar", adhkarRoutes);

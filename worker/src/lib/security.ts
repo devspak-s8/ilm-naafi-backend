@@ -11,7 +11,7 @@ export function toB64Url(data: Uint8Array | ArrayBuffer): string {
 	return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-export function fromB64Url(value: string): Uint8Array {
+export function fromB64Url(value: string): Uint8Array<ArrayBuffer> {
 	const b64 = value.replace(/-/g, "+").replace(/_/g, "/");
 	const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
 	const bin = atob(padded);

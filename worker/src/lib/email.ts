@@ -48,6 +48,15 @@ export function sendVerificationEmail(env: Env, to: string, token: string): Prom
 	return sendEmail(env, to, "Verify your email address", html);
 }
 
+export function sendWelcomeEmail(env: Env, to: string, name: string): Promise<void> {
+	const html = `<html><body><p>Assalamu alaykum ${escapeHtml(name)},</p><p>Welcome to <strong>Ilm Nafi</strong>! Your account has been created.</p><p>Please verify your email address using the link we sent in a separate email to activate your account.</p><p>May your journey of learning be blessed.</p></body></html>`;
+	return sendEmail(env, to, "Welcome to Ilm Nafi", html);
+}
+
+function escapeHtml(s: string): string {
+	return s.replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch] as string));
+}
+
 export function sendPasswordResetEmail(env: Env, to: string, token: string): Promise<void> {
 	const url = `${env.APP_URL}/auth/reset-password?token=${encodeURIComponent(token)}`;
 	const html = `<html><body><p>Hello,</p><p>You requested a password reset. Click the link below:</p><a href="${url}">Reset Password</a><p>This link will expire in 1 hour.</p></body></html>`;
